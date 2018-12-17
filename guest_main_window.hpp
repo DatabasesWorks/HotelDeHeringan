@@ -29,6 +29,8 @@ private slots:
     void OnTakeNoteTriggered();
 
     void OnNextButtonClicked();
+    void OnUploadPassportClicked();
+    void OnUseCameraClicked();
 private:
     Ui::NewGuestMainWindow *ui;
 

@@ -18,7 +18,7 @@ namespace utilities
     char const* Guest::table_name = "guests";
     char const* Staff::table_name = "staffs";
 
-    std::string get_password_hash( std::string const & password )
+    std::string get_password_hash( char const *password )
     {
         std::unique_ptr<Botan::RandomNumberGenerator> pseudo_rng{ Botan::AutoSeeded_RNG::make_rng() };
         return Botan::generate_bcrypt( password, *pseudo_rng );

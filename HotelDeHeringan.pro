@@ -4,7 +4,7 @@
 #
 #-------------------------------------------------
 
-QT       += core gui sql
+QT       += core gui sql multimedia multimediawidgets
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
@@ -22,13 +22,13 @@ DEFINES += QT_DEPRECATED_WARNINGS
 # You can also select to disable deprecated APIs only up to a certain version of Qt.
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
-INCLUDEPATH += "C:\\Wt2\\include"
-INCLUDEPATH += "$$PWD/third_party/botan/include"
+INCLUDEPATH += "C:\\Wt\\include"
+INCLUDEPATH += "C:\\botan2\\include"
 
 
-LIBS += -L"C:\\Wt2\\lib" -lwtdbosqlite3 -lwtdbo -lwt
-LIBS += -L"$$PWD/libs/botan" -lbotan
-LIBS += -L"C:\\boost_lib\\lib" -llibboost_date_time-vc140-mt-gd-x64-1_68
+LIBS += -L"C:\\Wt\\lib" -lwtdbosqlite3d -lwtdbod -lwtd
+LIBS += -L"C:\\botan2\\" -lbotan
+LIBS += -L"C:\\boost_lib\\stage\\more\\lib" -llibboost_date_time-vc140-mt-gd-x64-1_68
 
 
 SOURCES += main.cpp\
@@ -39,7 +39,8 @@ SOURCES += main.cpp\
     splash_screen.cpp \
     admin_request_dialog.cpp \
     utilities.cpp \
-    guest_main_window.cpp
+    guest_main_window.cpp \
+    camera_capture.cpp
 
 HEADERS  += mainwindow.hpp \
     login_dialog.hpp \
@@ -48,7 +49,8 @@ HEADERS  += mainwindow.hpp \
     splash_screen.hpp \
     admin_request_dialog.hpp \
     utilities.hpp \
-    guest_main_window.hpp
+    guest_main_window.hpp \
+    camera_capture.hpp
 
 RESOURCES += \
     icons.qrc

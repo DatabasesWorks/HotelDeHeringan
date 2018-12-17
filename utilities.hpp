@@ -159,7 +159,7 @@ struct Staff
     static char const* table_name;
 };
 
-std::string get_password_hash( std::string const & password );
+std::string get_password_hash( char const *password );
 bool is_correct_password( std::string const & password, std::string const & password_hash );
 std::unique_ptr<dbo::Session> CheckDatabaseAccess();
 }

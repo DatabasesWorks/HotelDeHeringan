@@ -8,8 +8,18 @@
 #include <QToolBar>
 #include <QMenu>
 #include <QCloseEvent>
+#include <QFileDialog>
+#include <QPixmap>
+#include <QCamera>
+#include <QCameraInfo>
+#include <QCameraImageCapture>
+#include <QCameraViewfinder>
+
+#include "camera_capture.hpp"
 
 #define NO_PARENT nullptr
+#define MAX_PASSPORT_WIDTH 340
+#define MAX_PASSPORT_HEIGHT 340
 
 NewGuestMainWindow::NewGuestMainWindow( QWidget *parent ) :
     QMainWindow( parent ), ui( new Ui::NewGuestMainWindow )
@@ -32,8 +42,10 @@ NewGuestMainWindow::NewGuestMainWindow( QWidget *parent ) :
 
     SetupActions();
     SetupToolbar();
-
-    QObject::connect( ui->next_button, SIGNAL(clicked(bool)), this, SLOT(OnNextButtonClicked()) );
+    ui->passport_tab->setEnabled( false );
+    QObject::connect( ui->next_button, SIGNAL(clicked(bool)), this, SLOT( OnNextButtonClicked()) );
+    QObject::connect( ui->upload_passport_button, SIGNAL(clicked(bool)), this, SLOT( OnUploadPassportClicked()) );
+    QObject::connect( ui->use_camera_button, SIGNAL(clicked(bool)), this, SLOT( OnUseCameraClicked()));
 }
 
 void NewGuestMainWindow::SetupActions()
@@ -124,13 +136,19 @@ void NewGuestMainWindow::OnNextButtonClicked()
                                      ui->nationality_edit->text(), ui->occupation_edit->text(),
                                      ui->address_tedit->toPlainText(), ui->arrival_from_edit->text(),
                                      ui->departure_to_edit->text(), ui->phone_number_edit->text(),
-                                     ui->vehicle_edit->text(), ui->nok_name_edit->text(),
-                                     ui->id_card_edit->text(), ui->account_settled_edit->text(),
+                                     ui->vehicle_edit->text(), ui->id_card_edit->text(),
+                                     ui->account_settled_edit->text(), ui->nok_name_edit->text(),
                                      ui->nok_address_tedit->toPlainText(), ui->nok_phone_edit->text() );
-    if( any_is_null ){
-        QMessageBox::critical( this, "Error", "One of the information fields is left unfilled, please"
-                                              " cross-check and try again.", QMessageBox::Ok );
+    bool const invalid_departure_date = ui->departure_dt->dateTime() < ui->arrival_dt->dateTime();
+
+    if( any_is_null || invalid_departure_date ){
+        QMessageBox::critical( this, "Error", "One of the information fields is left unfilled, "
+                                              "or invalid date is chosen. Please "
+                                              "cross-check and try again.",
+                               QMessageBox::Ok );
         return;
+    } else {
+        ui->passport_tab->setEnabled( true );
     }
 }
 
@@ -147,6 +165,55 @@ void NewGuestMainWindow::OnLogTriggered()
 void NewGuestMainWindow::OnTakeNoteTriggered()
 {
 
+}
+
+void NewGuestMainWindow::OnUseCameraClicked()
+{
+    CameraCapture * const camera_capture = new CameraCapture( this );
+    QObject::connect( camera_capture, &CameraCapture::camera_failed,
+                      [camera_capture]( QString const & message )
+    {
+        QMessageBox::critical( camera_capture, "Error", message );
+        camera_capture->reject();
+    });
+
+    try {
+        camera_capture->DisplayCamera();
+    } catch( std::exception & exception ) {
+        QMessageBox::critical( this, "Error", exception.what() );
+        camera_capture->reject();
+    }
+    if( camera_capture->exec() == QDialog::Accepted )
+    {
+        ui->upload_passport_label->clear();
+        ui->upload_passport_label->setPixmap( camera_capture->GetImage() );
+    }
+}
+
+void NewGuestMainWindow::OnUploadPassportClicked()
+{
+    ui->upload_passport_button->setEnabled( false );
+    QString filename = QFileDialog::getOpenFileName( this, "Passport", "",
+                                                     "Pictures (*.jpg *.png *.tiff *.jpeg);; "
+                                                     "All Files (*.*)" );
+    if( filename.isNull() ){
+        ui->upload_passport_label->setText( "No passport used" );
+    } else {
+        QPixmap const picture{ filename };
+        QSize const max_size = picture.size();
+        int preferred_height = max_size.height();
+        int preferred_width = max_size.width();
+
+        if( preferred_height > MAX_PASSPORT_HEIGHT ){
+            preferred_height = MAX_PASSPORT_HEIGHT;
+        }
+        if( preferred_width > MAX_PASSPORT_WIDTH ){
+            preferred_width = MAX_PASSPORT_WIDTH;
+        }
+        ui->upload_passport_label->clear();
+        ui->upload_passport_label->setPixmap( picture.scaled( preferred_width, preferred_height ) );
+    }
+    ui->upload_passport_button->setEnabled( true );
 }
 
 NewGuestMainWindow::~NewGuestMainWindow()

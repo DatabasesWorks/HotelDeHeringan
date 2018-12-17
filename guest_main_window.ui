@@ -128,9 +128,9 @@ QTabBar::tab:!selected {
 }</string>
       </property>
       <property name="currentIndex">
-       <number>0</number>
+       <number>1</number>
       </property>
-      <widget class="QWidget" name="tab_2">
+      <widget class="QWidget" name="new_guest_tab">
        <attribute name="title">
         <string>New Guest</string>
        </attribute>
@@ -622,7 +622,7 @@ QTabBar::tab:!selected {
         </property>
        </widget>
       </widget>
-      <widget class="QWidget" name="tab_5">
+      <widget class="QWidget" name="passport_tab">
        <attribute name="title">
         <string>Passport and other metadata</string>
        </attribute>
@@ -682,7 +682,7 @@ QTabBar::tab:!selected {
         </property>
        </widget>
       </widget>
-      <widget class="QWidget" name="tab">
+      <widget class="QWidget" name="find_guest_tab">
        <attribute name="title">
         <string>Find Existing Guest</string>
        </attribute>
@@ -923,7 +923,7 @@ p, li { white-space: pre-wrap; }
         </item>
        </layout>
       </widget>
-      <widget class="QWidget" name="tab_4">
+      <widget class="QWidget" name="order_and_bills_tab">
        <attribute name="title">
         <string>Orders and Bills</string>
        </attribute>
