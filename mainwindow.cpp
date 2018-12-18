@@ -160,7 +160,7 @@ void MainWindow::DefineRoles()
 
 void MainWindow::AddGuestInformation()
 {
-    NewGuestMainWindow *const guest_registration_window = new NewGuestMainWindow( this );
+    NewGuestMainWindow *const guest_registration_window = new NewGuestMainWindow( database_session, this );
     guest_registration_window->show();
 }
 

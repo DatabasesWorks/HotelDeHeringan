@@ -3,6 +3,7 @@
 
 #include <QDialog>
 #include <QPixmap>
+#include <QImage>
 
 class QWidget;
 class QCameraViewfinder;
@@ -20,8 +21,9 @@ public:
     void DisplayCamera();
     QPixmap GetImage() const;
 
-protected:
+protected slots:
     void closeEvent(QCloseEvent *) override;
+    void OnImageCaptured( int, QImage const &image_preview );
 signals:
     void camera_failed( QString );
 private:
@@ -29,8 +31,6 @@ private:
     QCameraImageCapture *image_capture;
     QCamera             *camera_to_use;
     QPushButton         *capture_button;
-    QPushButton         *capture_another_button;
-    QPushButton         *use_captured_button;
     QPixmap             captured_image;
 
     void UnlockCamera();

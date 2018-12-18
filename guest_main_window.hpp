@@ -2,6 +2,8 @@
 #define GUEST_MAIN_WINDOW_HPP
 
 #include <QMainWindow>
+#include <Wt/Dbo/Session.h>
+#include <memory>
 
 namespace Ui {
 class NewGuestMainWindow;
@@ -18,7 +20,7 @@ private:
     void SetupActions();
     void SetupToolbar();
 public:
-    explicit NewGuestMainWindow(QWidget *parent = 0);
+    explicit NewGuestMainWindow( std::unique_ptr<Wt::Dbo::Session> & db_session, QWidget *parent = 0);
     ~NewGuestMainWindow();
     void closeEvent( QCloseEvent *event ) override;
 private slots:
@@ -41,6 +43,8 @@ private:
     QAction *note_action_ptr;
     QAction *refresh_action_ptr;
     QAction *close_action_ptr;
+
+    std::unique_ptr<Wt::Dbo::Session> &database_session;
 };
 
 #endif // GUEST_MAIN_WINDOW_HPP

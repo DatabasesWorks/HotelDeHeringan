@@ -10,34 +10,24 @@
 #include <QImage>
 #include <QPushButton>
 #include <QGridLayout>
+#include <QLabel>
 
 CameraCapture::CameraCapture( QWidget *parent): QDialog( parent ),
     view_finder{ new QCameraViewfinder() }, camera_to_use{ nullptr },
-    capture_button{ new QPushButton( "Capture", this ) },
-    capture_another_button{ new QPushButton( "Capture another", this ) },
-    use_captured_button{ new QPushButton( "Use captured image", this ) }
+    capture_button{ new QPushButton( "Capture", this ) }
 {
     view_finder->setMinimumSize( 640, 640 );
 
     QGridLayout *grid_layout { new QGridLayout( this ) };
     grid_layout->setProperty( "styleSheet", QString{ "QPushButton { border: 2px solid; border-radius: 6px; "
                                                      "padding: 6px; }" } );
-    grid_layout->addWidget( capture_button, 0, 0, Qt::AlignLeft );
-    grid_layout->addWidget( capture_another_button, 0, 1, Qt::AlignCenter );
-    grid_layout->addWidget( use_captured_button, 0, 2, Qt::AlignRight );
+    grid_layout->addWidget( capture_button, 0, 0, 1, 3 );
     grid_layout->addWidget( view_finder, 1, 0, 10, 3 );
 
     QObject::connect( capture_button, &QPushButton::clicked, [this]( bool ) mutable {
         image_capture->capture();
     });
 
-    QObject::connect( capture_another_button, &QPushButton::clicked, [this]( bool ) mutable {
-        image_capture->cancelCapture();
-    });
-    QObject::connect( use_captured_button, &QPushButton::clicked, [=]{
-        UnlockCamera();
-        this->accept();
-    });
     this->setLayout( grid_layout );
 }
 
@@ -45,6 +35,7 @@ void CameraCapture::UnlockCamera()
 {
     if( camera_to_use ){
         camera_to_use->unlock();
+        camera_to_use->unload();
         camera_to_use->stop();
     }
     if( this->image_capture ){
@@ -101,12 +92,40 @@ void CameraCapture::DisplayCamera() noexcept( false )
     camera_to_use->setCaptureMode( QCamera::CaptureStillImage );
     camera_to_use->start();
     camera_to_use->searchAndLock();
-    QObject::connect( image_capture, &QCameraImageCapture::imageCaptured,
-                      [this]( int id, QImage const &preview ) mutable
-    {
-        (void) id;
-        this->captured_image = QPixmap::fromImage( preview );
+    QObject::connect( image_capture, SIGNAL(imageCaptured(int,QImage)), this,
+                      SLOT(OnImageCaptured(int,QImage)) );
+
+}
+
+void CameraCapture::OnImageCaptured( int, QImage const & image_preview )
+{
+    QDialog *preview_dialog = new QDialog( this );
+    preview_dialog->setWindowTitle( "Preview" );
+    QVBoxLayout *layout = new QVBoxLayout();
+    QPushButton *use_captured_image_button = new QPushButton( "Use image" );
+    QPushButton *take_another_image_button = new QPushButton( "Take another" );
+    QLabel      *preview = new QLabel();
+
+    preview->clear();
+    preview->setPixmap( QPixmap::fromImage( image_preview ));
+    QGridLayout *button_grid = new QGridLayout();
+    button_grid->addWidget( use_captured_image_button, 0, 0, Qt::AlignLeft );
+    button_grid->addWidget( take_another_image_button, 0, 1, Qt::AlignRight );
+
+    layout->addWidget( preview );
+    layout->addLayout( button_grid );
+    preview_dialog->setLayout( layout );
+
+    QObject::connect( use_captured_image_button, &QPushButton::clicked, [=]( bool ){
+        preview_dialog->accept();
+        this->UnlockCamera();
+        this->captured_image = QPixmap::fromImage( image_preview );
+        this->accept();
     });
+    QObject::connect( take_another_image_button, &QPushButton::clicked, [=]( bool ){
+        preview_dialog->accept();
+    });
+    preview_dialog->exec();
 }
 
 void CameraCapture::closeEvent(QCloseEvent * event)

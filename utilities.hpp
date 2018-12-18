@@ -54,22 +54,22 @@ public:
 struct Guest;
 struct Lodging
 {
+    long            lodging_ref_id; // reference id, primary key
     std::string     room_number;
     std::string     amount_paid;
+    std::string     account_settler;
+
     std::string     arrived_from;
     std::string     departing_to;
-
     std::string     vehicle_license_plate;
     std::string     nature_of_visit;
-    std::string     account_settler;
-    Wt::WDateTime   date_lodged;
 
     Wt::WDateTime   date_of_arrival;
     Wt::WDateTime   date_of_departure;
     long            number_of_nights;
     long            number_of_adults;
-
     long            number_of_children;
+
     dbo::ptr<Guest> guest;
     dbo::collection<dbo::ptr<Order>> orders;
 public:
@@ -77,15 +77,15 @@ public:
     template<typename Action>
     void persist( Action & action )
     {
+        dbo::field( action, lodging_ref_id, "reference_id" );
         dbo::field( action, room_number, "room_number" );
         dbo::field( action, amount_paid, "amount_paid" );
+        dbo::field( action, account_settler, "account_settler" );
+
         dbo::field( action, arrived_from, "arrived_from" );
         dbo::field( action, departing_to, "departing_to" );
-
         dbo::field( action, vehicle_license_plate, "vehicle_plate" );
         dbo::field( action, nature_of_visit, "nature_of_visit" );
-        dbo::field( action, account_settler, "account_settler" );
-        dbo::field( action, date_lodged, "clocked_in_date" );
 
         dbo::field( action, date_of_arrival, "arrival_date" );
         dbo::field( action, date_of_departure, "departure_date" );
@@ -101,6 +101,7 @@ public:
 
 struct Guest
 {
+    long        guest_id; //reference id, primary key
     std::string surname;
     std::string other_names;
     std::string nationality;
@@ -111,12 +112,15 @@ struct Guest
     std::string nok_fullname; // next of kin(nok)
     std::string nok_address;
     std::string nok_phone_number;
+    std::string vehicle_license_plate;
+
     dbo::collection<dbo::ptr<Lodging>> lodgings;
 
 public:
     template<typename Action>
     void persist( Action & action )
     {
+        dbo::field( action, guest_id, "guest_id" );
         dbo::field( action, surname, "surname" );
         dbo::field( action, other_names, "other_names" );
         dbo::field( action, nationality, "nationality" );
@@ -127,6 +131,7 @@ public:
         dbo::field( action, nok_fullname, "nok_fullname" );
         dbo::field( action, nok_address, "nok_address" );
         dbo::field( action, nok_phone_number, "nok_mobile_number" );
+        dbo::field( action, vehicle_license_plate, "license_plate" );
         dbo::hasMany( action, lodgings, dbo::ManyToOne, "guest" );
     }
     static char const* table_name;
@@ -139,7 +144,7 @@ struct Staff
         std::string role_name;
         int         permission;
     };
-
+    long        staff_id;
     std::string name;
     std::string username;
     std::string password_hash;
@@ -149,6 +154,7 @@ struct Staff
     template<typename Action>
     void persist( Action &action )
     {
+        dbo::field( action, staff_id, "staff_id" );
         dbo::field( action, name, "name" );
         dbo::field( action, username, "username" );
         dbo::field( action, password_hash, "password_hash" );

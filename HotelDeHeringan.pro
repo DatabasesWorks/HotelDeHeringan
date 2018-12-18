@@ -40,7 +40,8 @@ SOURCES += main.cpp\
     admin_request_dialog.cpp \
     utilities.cpp \
     guest_main_window.cpp \
-    camera_capture.cpp
+    camera_capture.cpp \
+    lodging_dialog.cpp
 
 HEADERS  += mainwindow.hpp \
     login_dialog.hpp \
@@ -50,7 +51,8 @@ HEADERS  += mainwindow.hpp \
     admin_request_dialog.hpp \
     utilities.hpp \
     guest_main_window.hpp \
-    camera_capture.hpp
+    camera_capture.hpp \
+    lodging_dialog.hpp
 
 RESOURCES += \
     icons.qrc
@@ -60,4 +62,5 @@ FORMS += \
     role_definition_dialog.ui \
     reservation_dialog.ui \
     admin_request_dialog.ui \
-    guest_main_window.ui
+    guest_main_window.ui \
+    lodging_dialog.ui

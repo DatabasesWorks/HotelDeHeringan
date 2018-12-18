@@ -7,6 +7,7 @@
 #include <QMenuBar>
 #include <QToolBar>
 #include <QMenu>
+#include <QDebug>
 #include <QCloseEvent>
 #include <QFileDialog>
 #include <QPixmap>
@@ -14,15 +15,19 @@
 #include <QCameraInfo>
 #include <QCameraImageCapture>
 #include <QCameraViewfinder>
+#include <Wt/Dbo/Transaction.h>
 
 #include "camera_capture.hpp"
+#include "utilities.hpp"
 
 #define NO_PARENT nullptr
 #define MAX_PASSPORT_WIDTH 340
 #define MAX_PASSPORT_HEIGHT 340
 
-NewGuestMainWindow::NewGuestMainWindow( QWidget *parent ) :
-    QMainWindow( parent ), ui( new Ui::NewGuestMainWindow )
+namespace dbo = Wt::Dbo;
+
+NewGuestMainWindow::NewGuestMainWindow( std::unique_ptr<Wt::Dbo::Session> &db_session, QWidget *parent ) :
+    QMainWindow( parent ), ui( new Ui::NewGuestMainWindow ), database_session{ db_session }
 {
     ui->setupUi(this);
     this->setMinimumSize( 800, 520 );
@@ -33,16 +38,12 @@ NewGuestMainWindow::NewGuestMainWindow( QWidget *parent ) :
 
     QStringList const search_by_keywords{ "Search by name", "Search by phone number", "Search by room number" };
     ui->criteria_combo->addItems( search_by_keywords );
-    ui->adult_combo->addItems( QStringList{ "1", "2", "3" } );
-    ui->children_combo->addItems( QStringList{ "0", "1", "2" } );
-    ui->visit_combo->addItems( QStringList{ "Pleasure", "Business", "Others(specify)" } );
-
-    ui->arrival_dt->setDateTime( QDateTime::currentDateTime() );
-    ui->departure_dt->setDateTime( QDateTime::currentDateTime().addDays( 1 ) );
 
     SetupActions();
     SetupToolbar();
     ui->passport_tab->setEnabled( false );
+
+    QObject::connect( ui->save_button, SIGNAL(clicked(bool)), this, SLOT( OnNewAddGuestTriggered() ) );
     QObject::connect( ui->next_button, SIGNAL(clicked(bool)), this, SLOT( OnNextButtonClicked()) );
     QObject::connect( ui->upload_passport_button, SIGNAL(clicked(bool)), this, SLOT( OnUploadPassportClicked()) );
     QObject::connect( ui->use_camera_button, SIGNAL(clicked(bool)), this, SLOT( OnUseCameraClicked()));
@@ -53,6 +54,7 @@ void NewGuestMainWindow::SetupActions()
     save_action_ptr = new QAction( QIcon( ":/icons/icons/save.png" ), "Save", NO_PARENT );
     save_action_ptr->setShortcut( QKeySequence( QString( "Ctrl+N" ) ) );
     save_action_ptr->setStatusTip( "Add new guest entry" );
+    save_action_ptr->setEnabled( false );
     QObject::connect( save_action_ptr, SIGNAL(triggered(bool)), this, SLOT( OnNewAddGuestTriggered() ) );
 
     delete_action_ptr = new QAction( QIcon( ":/icons/icons/delete.png"),"Delete", NO_PARENT );
@@ -113,7 +115,30 @@ void NewGuestMainWindow::SetupToolbar()
 
 void NewGuestMainWindow::OnNewAddGuestTriggered()
 {
+    if ( QPixmap const *pixmap = ui->upload_passport_label->pixmap() ){
 
+    }
+    Wt::Dbo::Transaction transaction{ *database_session };
+
+    auto guest = std::make_unique<utilities::Guest>();
+    guest->surname = ui->surname_edit->text().toStdString();
+    guest->other_names = ui->other_names_edit->text().toStdString();
+    guest->nationality = ui->nationality_edit->text().toStdString();
+    guest->occupation = ui->occupation_edit->text().toStdString();
+    guest->address = ui->address_tedit->toPlainText().toStdString();
+    guest->phone_number = ui->phone_number_edit->text().toStdString();
+    guest->means_of_id = ui->id_card_edit->text().toStdString();
+    guest->nok_fullname = ui->nok_name_edit->text().toStdString();
+    guest->nok_address = ui->nok_address_tedit->toPlainText().toStdString();
+    guest->nok_phone_number = ui->nok_phone_edit->text().toStdString();
+
+    try {
+        database_session->add( std::move( guest ) );
+        transaction.commit();
+    } catch( dbo::Exception const & except ){
+        QMessageBox::critical( this, "Error", "Unable to store guest's information, please try again later" );
+        qInfo() << except.what();
+    }
 }
 
 void NewGuestMainWindow::OnDeleteAddGuestTriggered()
@@ -122,7 +147,7 @@ void NewGuestMainWindow::OnDeleteAddGuestTriggered()
 }
 
 template<typename T>
-bool IsNull( T const & str ){ return str.isNull(); }
+bool IsNull( T const & str ){ return str.isEmpty(); }
 
 template<typename T, typename... U>
 bool IsNull( T const & str, U &&...other_str )
@@ -134,14 +159,11 @@ void NewGuestMainWindow::OnNextButtonClicked()
 {
     bool const any_is_null = IsNull( ui->surname_edit->text(), ui->other_names_edit->text(),
                                      ui->nationality_edit->text(), ui->occupation_edit->text(),
-                                     ui->address_tedit->toPlainText(), ui->arrival_from_edit->text(),
-                                     ui->departure_to_edit->text(), ui->phone_number_edit->text(),
+                                     ui->address_tedit->toPlainText(), ui->phone_number_edit->text(),
                                      ui->vehicle_edit->text(), ui->id_card_edit->text(),
-                                     ui->account_settled_edit->text(), ui->nok_name_edit->text(),
-                                     ui->nok_address_tedit->toPlainText(), ui->nok_phone_edit->text() );
-    bool const invalid_departure_date = ui->departure_dt->dateTime() < ui->arrival_dt->dateTime();
-
-    if( any_is_null || invalid_departure_date ){
+                                     ui->nok_name_edit->text(), ui->nok_address_tedit->toPlainText(),
+                                     ui->nok_phone_edit->text() );
+    if( any_is_null ){
         QMessageBox::critical( this, "Error", "One of the information fields is left unfilled, "
                                               "or invalid date is chosen. Please "
                                               "cross-check and try again.",
@@ -149,6 +171,8 @@ void NewGuestMainWindow::OnNextButtonClicked()
         return;
     } else {
         ui->passport_tab->setEnabled( true );
+        ui->tabWidget->setCurrentIndex( 1 );
+        save_action_ptr->setEnabled( true );
     }
 }
 
@@ -182,9 +206,11 @@ void NewGuestMainWindow::OnUseCameraClicked()
     } catch( std::exception & exception ) {
         QMessageBox::critical( this, "Error", exception.what() );
         camera_capture->reject();
+        return;
     }
     if( camera_capture->exec() == QDialog::Accepted )
     {
+
         ui->upload_passport_label->clear();
         ui->upload_passport_label->setPixmap( camera_capture->GetImage() );
     }
@@ -196,7 +222,7 @@ void NewGuestMainWindow::OnUploadPassportClicked()
     QString filename = QFileDialog::getOpenFileName( this, "Passport", "",
                                                      "Pictures (*.jpg *.png *.tiff *.jpeg);; "
                                                      "All Files (*.*)" );
-    if( filename.isNull() ){
+    if( filename.isEmpty() ){
         ui->upload_passport_label->setText( "No passport used" );
     } else {
         QPixmap const picture{ filename };
