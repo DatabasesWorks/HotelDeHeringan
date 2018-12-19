@@ -16,7 +16,7 @@ class CameraCapture: public QDialog
 {
     Q_OBJECT
 public:
-    CameraCapture( QWidget *parent = nullptr );
+    CameraCapture( QString const filename, QWidget *parent = nullptr );
     ~CameraCapture();
     void DisplayCamera();
     QPixmap GetImage() const;

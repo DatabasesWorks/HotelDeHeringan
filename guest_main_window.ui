@@ -128,7 +128,7 @@ QTabBar::tab:!selected {
 }</string>
       </property>
       <property name="currentIndex">
-       <number>2</number>
+       <number>1</number>
       </property>
       <widget class="QWidget" name="new_guest_tab">
        <attribute name="title">
@@ -436,7 +436,7 @@ QTabBar::tab:!selected {
          <set>Qt::AlignCenter</set>
         </property>
        </widget>
-       <widget class="QWidget" name="">
+       <widget class="QWidget" name="layoutWidget">
         <property name="geometry">
          <rect>
           <x>80</x>

@@ -115,9 +115,6 @@ void NewGuestMainWindow::SetupToolbar()
 
 void NewGuestMainWindow::OnNewAddGuestTriggered()
 {
-    if ( QPixmap const *pixmap = ui->upload_passport_label->pixmap() ){
-
-    }
     Wt::Dbo::Transaction transaction{ *database_session };
 
     auto guest = std::make_unique<utilities::Guest>();
@@ -131,14 +128,41 @@ void NewGuestMainWindow::OnNewAddGuestTriggered()
     guest->nok_fullname = ui->nok_name_edit->text().toStdString();
     guest->nok_address = ui->nok_address_tedit->toPlainText().toStdString();
     guest->nok_phone_number = ui->nok_phone_edit->text().toStdString();
+    if ( ui->upload_passport_label->pixmap() ){
+        guest->picture_path = guest_picture_fullname.toStdString();
+    }
 
     try {
         database_session->add( std::move( guest ) );
         transaction.commit();
+        ClearAllData();
+        QMessageBox::information( this, "Success", "Data saved succesfully" );
     } catch( dbo::Exception const & except ){
         QMessageBox::critical( this, "Error", "Unable to store guest's information, please try again later" );
         qInfo() << except.what();
     }
+}
+
+void NewGuestMainWindow::ClearAllData()
+{
+    guest_picture_fullname.clear();
+    save_action_ptr->setDisabled( true );
+    ui->new_guest_tab->setEnabled( true );
+    ui->passport_tab->setDisabled( true );
+    ui->tabWidget->setCurrentIndex( 0 );
+    ui->surname_edit->clear();
+    ui->surname_edit->setFocus();
+    ui->other_names_edit->clear();
+    ui->nationality_edit->clear();
+    ui->occupation_edit->clear();
+    ui->address_tedit->clear();
+    ui->phone_number_edit->clear();
+    ui->vehicle_edit->clear();
+    ui->id_card_edit->clear();
+    ui->nok_name_edit->clear();
+    ui->nok_address_tedit->clear();
+    ui->nok_phone_edit->clear();
+    ui->upload_passport_label->clear();
 }
 
 void NewGuestMainWindow::OnDeleteAddGuestTriggered()
@@ -172,6 +196,7 @@ void NewGuestMainWindow::OnNextButtonClicked()
     } else {
         ui->passport_tab->setEnabled( true );
         ui->tabWidget->setCurrentIndex( 1 );
+        ui->new_guest_tab->setDisabled( true );
         save_action_ptr->setEnabled( true );
     }
 }
@@ -191,9 +216,24 @@ void NewGuestMainWindow::OnTakeNoteTriggered()
 
 }
 
+QString NewGuestMainWindow::GetPictureFilename( QString const default_filename ) const
+{
+    QString file_name { default_filename };
+    if( file_name.isEmpty() ){
+        file_name = ui->surname_edit->text().toLower() + '_' + ui->other_names_edit->text().toLower();
+        file_name.replace( ' ', '_' );
+    }
+    QDir const default_picture_path { QDir::currentPath() + tr( "/snapshots/" ) };
+    if( !default_picture_path.exists() ) {
+        default_picture_path.mkpath( default_picture_path.path() );
+    }
+    return default_picture_path.path() + '/' + file_name;
+}
+
 void NewGuestMainWindow::OnUseCameraClicked()
 {
-    CameraCapture * const camera_capture = new CameraCapture( this );
+    QString const picture_location = GetPictureFilename();
+    CameraCapture * const camera_capture = new CameraCapture( picture_location, this );
     QObject::connect( camera_capture, &CameraCapture::camera_failed,
                       [camera_capture]( QString const & message )
     {
@@ -210,9 +250,9 @@ void NewGuestMainWindow::OnUseCameraClicked()
     }
     if( camera_capture->exec() == QDialog::Accepted )
     {
-
         ui->upload_passport_label->clear();
         ui->upload_passport_label->setPixmap( camera_capture->GetImage() );
+        guest_picture_fullname = picture_location;
     }
 }
 
@@ -237,7 +277,21 @@ void NewGuestMainWindow::OnUploadPassportClicked()
             preferred_width = MAX_PASSPORT_WIDTH;
         }
         ui->upload_passport_label->clear();
+        if( !guest_picture_fullname.isEmpty() ){
+            auto response = QMessageBox::information( this, "Delete", "It seems a picture was taken before this, "
+                                                                      "would youlike to delete it from library?",
+                                                      QMessageBox::Yes | QMessageBox::No );
+            if( response == QMessageBox::Yes ){
+                QFile previous_image{ guest_picture_fullname };
+                if( previous_image.remove() ){
+                    QMessageBox::information( this, "Delete", "Picture removed successfully" );
+                } else {
+                    QMessageBox::critical( this, "Delete", "Unable to remove picture " );
+                }
+            }
+        }
         ui->upload_passport_label->setPixmap( picture.scaled( preferred_width, preferred_height ) );
+        guest_picture_fullname = GetPictureFilename( filename );
     }
     ui->upload_passport_button->setEnabled( true );
 }

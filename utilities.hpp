@@ -112,6 +112,7 @@ struct Guest
     std::string nok_fullname; // next of kin(nok)
     std::string nok_address;
     std::string nok_phone_number;
+    std::string picture_path;
     std::string vehicle_license_plate;
 
     dbo::collection<dbo::ptr<Lodging>> lodgings;
@@ -131,6 +132,7 @@ public:
         dbo::field( action, nok_fullname, "nok_fullname" );
         dbo::field( action, nok_address, "nok_address" );
         dbo::field( action, nok_phone_number, "nok_mobile_number" );
+        dbo::field( action, picture_path, "picture_path" );
         dbo::field( action, vehicle_license_plate, "license_plate" );
         dbo::hasMany( action, lodgings, dbo::ManyToOne, "guest" );
     }

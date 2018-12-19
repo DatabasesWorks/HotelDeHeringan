@@ -19,6 +19,8 @@ class NewGuestMainWindow : public QMainWindow
 private:
     void SetupActions();
     void SetupToolbar();
+    void ClearAllData();
+    QString GetPictureFilename( QString const default_filename = QString{} ) const;
 public:
     explicit NewGuestMainWindow( std::unique_ptr<Wt::Dbo::Session> & db_session, QWidget *parent = 0);
     ~NewGuestMainWindow();
@@ -43,7 +45,7 @@ private:
     QAction *note_action_ptr;
     QAction *refresh_action_ptr;
     QAction *close_action_ptr;
-
+    QString guest_picture_fullname;
     std::unique_ptr<Wt::Dbo::Session> &database_session;
 };
 

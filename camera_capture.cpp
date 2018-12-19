@@ -12,7 +12,7 @@
 #include <QGridLayout>
 #include <QLabel>
 
-CameraCapture::CameraCapture( QWidget *parent): QDialog( parent ),
+CameraCapture::CameraCapture( QString const file_name, QWidget *parent ): QDialog( parent ),
     view_finder{ new QCameraViewfinder() }, camera_to_use{ nullptr },
     capture_button{ new QPushButton( "Capture", this ) }
 {
@@ -24,8 +24,8 @@ CameraCapture::CameraCapture( QWidget *parent): QDialog( parent ),
     grid_layout->addWidget( capture_button, 0, 0, 1, 3 );
     grid_layout->addWidget( view_finder, 1, 0, 10, 3 );
 
-    QObject::connect( capture_button, &QPushButton::clicked, [this]( bool ) mutable {
-        image_capture->capture();
+    QObject::connect( capture_button, &QPushButton::clicked, [file_name, this]( bool ){
+        image_capture->capture( file_name );
     });
 
     this->setLayout( grid_layout );
