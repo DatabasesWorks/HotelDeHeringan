@@ -16,5 +16,6 @@
         <file>icons/save.png</file>
         <file>icons/cancel.png</file>
         <file>icons/refresh.png</file>
+        <file>icons/default_dp.jpg</file>
     </qresource>
 </RCC>

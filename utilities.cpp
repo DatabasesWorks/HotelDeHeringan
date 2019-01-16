@@ -31,7 +31,7 @@ namespace utilities
 
     std::unique_ptr<dbo::Session> CheckDatabaseAccess()
     {
-        auto overall_db = std::make_unique<dbo::backend::Sqlite3>( "blob.dat" );
+        auto overall_db = std::make_unique<dbo::backend::Sqlite3>( "blob.db" );
         auto db_session = std::make_unique<dbo::Session>();
 
         using utilities::Lodging;
@@ -74,6 +74,16 @@ namespace utilities
             qDebug() << exception.what();
         }
         return db_session;
+    }
+    Wt::WDateTime QtDateTimeToWtDateTime( QDateTime const & object )
+    {
+        auto const date_temp{ object.date() };
+        auto const time_temp{ object.time() };
+
+        Wt::WDate const date{ date_temp.year(), date_temp.month(), date_temp.day() };
+        Wt::WTime const time{ time_temp.hour(), time_temp.minute(), time_temp.second(),
+                    time_temp.msec() };
+        return { date, time };
     }
 }
 #undef MAX_TRIES

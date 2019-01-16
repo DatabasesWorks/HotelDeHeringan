@@ -49,26 +49,30 @@ void MainWindow::PromptLogin()
 {
     LoginDialog *ptr_login_dialog = new LoginDialog( ptr_workspace );
     if( ptr_login_dialog->exec() == QDialog::Accepted ){
-        QString const username = ptr_login_dialog->GetUsername();
-        QString const password =  ptr_login_dialog->GetPassword();
-        if( username.isNull() || password.isNull() ){
+        std::string const username = ptr_login_dialog->GetUsername().trimmed().toStdString();
+        std::string const password =  ptr_login_dialog->GetPassword().toStdString();
+        if( username.empty() || password.empty() ){
             QMessageBox::critical( this, "Error", "The username and the password may not be empty" );
             return;
         }
-        try{
+        try {
+            auto start = std::chrono::system_clock::now();
             dbo::Transaction transaction{ *database_session };
-            dbo::Query<dbo::ptr<utilities::Staff>> user_query = database_session->find<utilities::Staff>()
-                    .where( "username = ?"  ).bind( username.toLower().toStdString() );
-            auto const & user_ptr = user_query.resultValue();
+            dbo::ptr<utilities::Staff> user_ptr = database_session->find<utilities::Staff>()
+                    .where( "username = ?" ).bind( username ).resultValue();
+            auto end = std::chrono::system_clock::now();
+            auto duration = end - start;
+            qDebug() << duration.count();
+
             if( !user_ptr ){
                 QMessageBox::critical( this, "Error", "Username/Password was not found" );
             } else {
-                if( !utilities::is_correct_password( password.toStdString(), user_ptr->password_hash )){
+                if( !utilities::is_correct_password( password, user_ptr->password_hash )){
                     QMessageBox::critical( this, "Error", "Username/Password is incorrect" );
                 } else {
                     login_session.is_logged_in = true;
                     login_session.name = user_ptr->name;
-                    login_session.username = username.toStdString();
+                    login_session.username = username;
                     login_session.user_permission = user_ptr->assigned_role.permission;
                     ToggleSessionActivation( true );
                     QMessageBox::information( this, "Login", tr( "Welcome, %1").arg( user_ptr->name.c_str() ) );
@@ -189,25 +193,30 @@ void MainWindow::SetMenus()
     QMenu *ptr_controls_menu;
     QMenu *ptr_privileged_controls_menu;
     QMenu *ptr_trivial_controls_menu;
+    QMenu *ptr_audit_controls_menu;
 
     ptr_controls_menu = menuBar()->addMenu( QIcon(""), "Controls" );
     ptr_controls_menu->addAction( ptr_login_action );
     ptr_controls_menu->addSeparator();
     ptr_controls_menu->addAction( ptr_logout_action );
 
-    ptr_privileged_controls_menu = menuBar()->addMenu( QIcon(), "Main Menu" );
+    ptr_privileged_controls_menu = menuBar()->addMenu( QIcon(), "FrontDesk" );
     ptr_privileged_controls_menu->addSeparator();
     ptr_privileged_controls_menu->addAction( ptr_guest_registration_action );
     ptr_privileged_controls_menu->addSeparator();
     ptr_privileged_controls_menu->addAction( ptr_define_role_action );
 
-    ptr_trivial_controls_menu = ptr_privileged_controls_menu->addMenu( QIcon(), "Operations" );
+    ptr_trivial_controls_menu = ptr_privileged_controls_menu->addMenu( QIcon(), "Room Maintenance" );
     ptr_trivial_controls_menu->addSeparator();
     ptr_trivial_controls_menu->addAction( ptr_reservation_action );
     ptr_trivial_controls_menu->addSeparator();
     ptr_trivial_controls_menu->addAction( ptr_expenses_action );
     ptr_trivial_controls_menu->addSeparator();
     ptr_trivial_controls_menu->addAction( ptr_reports_action );
+
+    ptr_audit_controls_menu = menuBar()->addMenu( QIcon(), "Audit" );
+    ptr_audit_controls_menu->addSeparator();
+//    ptr_audit_controls_menu->addAction();
 }
 
 void MainWindow::SetToolbar()

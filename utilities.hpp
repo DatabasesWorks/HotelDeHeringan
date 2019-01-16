@@ -3,9 +3,11 @@
 
 #include <QDebug>
 #include <Wt/Dbo/Dbo.h>
+#include <Wt/WDateTime.h>
 #include <Wt/Dbo/WtSqlTraits.h>
 #include <Wt/Dbo/backend/Sqlite3.h>
 #include <Wt/WDateTime.h>
+#include <QDateTime>
 #include <botan/bcrypt.h>
 #include <string>
 #include <memory>
@@ -16,6 +18,17 @@
 namespace utilities
 {
 namespace dbo = Wt::Dbo;
+
+template<typename T>
+bool IsEmpty( T const & str ){ return str.isEmpty(); }
+
+template<typename T, typename... U>
+bool IsEmpty( T const & str, U &&...other_str )
+{
+    return IsEmpty( str ) || IsEmpty( std::forward<U>( other_str )... );
+}
+
+Wt::WDateTime QtDateTimeToWtDateTime( QDateTime const & object );
 
 enum Permission
 {
